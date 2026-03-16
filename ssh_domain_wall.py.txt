@@ -1,0 +1,54 @@
+"""
+Figure 1b: Mid-gap state localized at the domain wall.
+N = 200 sites, domain wall at site 100.
+Output: fig1b_domain_wall.pdf
+"""
+import numpy as np
+from scipy.linalg import eigh
+import matplotlib.pyplot as plt
+
+N = 200
+t1, t2 = 5.0, 15.0
+wall = 100
+
+H = np.zeros((N, N))
+for i in range(N - 1):
+    if i < wall:
+        t = t1 if i % 2 == 0 else t2
+    else:
+        t = t2 if i % 2 == 0 else t1
+    H[i, i+1] = t
+    H[i+1, i] = t
+
+vals, vecs = eigh(H)
+
+# Find domain wall state (peak near site 100)
+near_zero = np.argsort(np.abs(vals))[:5]
+dw_idx = None
+for j in near_zero:
+    peak = np.argmax(np.abs(vecs[:, j])**2)
+    if 80 < peak < 120:
+        dw_idx = j
+        break
+if dw_idx is None:
+    dw_idx = near_zero[0]
+
+psi = np.abs(vecs[:, dw_idx])**2
+print(f"Domain wall state: E = {vals[dw_idx]:.6f} meV")
+print(f"Peak at site: {np.argmax(psi)}")
+print(f"Sum |psi|^2 = {psi.sum():.4f}")
+
+fig, ax = plt.subplots(figsize=(7, 3.5))
+ax.plot(range(N), psi, 'r', lw=1.5)
+ax.axvline(wall, color='k', ls='--', lw=1.5, label=f'Seam (site {wall})')
+ax.fill_between(range(N), psi, alpha=0.15, color='red')
+ax.set_xlabel('Site index', fontsize=13)
+ax.set_ylabel(r'$|\psi(n)|^2$', fontsize=13)
+ax.set_title('Domain Wall State', fontsize=14)
+ax.set_xlim(0, N)
+ax.set_xticks([0, 50, 100, 150, 200])
+ax.legend(fontsize=11)
+ax.tick_params(labelsize=11)
+plt.tight_layout()
+plt.savefig('fig1b_domain_wall.pdf', dpi=300)
+print("Saved: fig1b_domain_wall.pdf")

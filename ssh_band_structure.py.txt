@@ -1,0 +1,27 @@
+"""
+Figure 1a: Bulk band structure of the SSH model.
+Parameters: t1 = 5 meV, t2 = 15 meV.
+Output: fig1a_band_structure.pdf
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+
+t1, t2 = 5.0, 15.0
+k = np.linspace(-np.pi, np.pi, 500)
+E = np.sqrt((t1 + t2 * np.cos(k))**2 + (t2 * np.sin(k))**2)
+
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.plot(k, E, 'b', lw=2, label=r'$E_+$')
+ax.plot(k, -E, 'b', lw=2, label=r'$E_-$')
+ax.axhline(0, color='r', ls='--', lw=1.5, alpha=0.7, label='Mid-gap')
+ax.set_xlabel(r'$k$', fontsize=13)
+ax.set_ylabel(r'$E$ (meV)', fontsize=13)
+ax.set_title('Bulk Band Structure', fontsize=14)
+ax.set_xlim(-np.pi, np.pi)
+ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
+ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$', r'$\pi/2$', r'$\pi$'])
+ax.legend(fontsize=11)
+ax.tick_params(labelsize=11)
+plt.tight_layout()
+plt.savefig('fig1a_band_structure.pdf', dpi=300)
+print("Saved: fig1a_band_structure.pdf")

@@ -1,0 +1,74 @@
+"""
+Verification: topological gap survival in the full 13-protofilament cylinder.
+Output: table of gap vs t_perp/t_par.
+"""
+import numpy as np
+from scipy.linalg import eigh
+
+def build_cylindrical_hamiltonian(N_rings, N_pf, t1, t2, t_perp):
+    N = 2 * N_rings * N_pf
+    H = np.zeros((N, N))
+
+    def idx(pf, ring, sub):
+        return pf * (2 * N_rings) + 2 * ring + sub
+
+    # Longitudinal couplings (SSH on each protofilament)
+    for pf in range(N_pf):
+        for ring in range(N_rings):
+            i, j = idx(pf, ring, 0), idx(pf, ring, 1)
+            H[i, j] = H[j, i] = t1
+            if ring < N_rings - 1:
+                i = idx(pf, ring, 1)
+                j = idx(pf, ring + 1, 0)
+                H[i, j] = H[j, i] = t2
+
+    # Lateral couplings
+    for pf in range(N_pf):
+        pf_next = (pf + 1) % N_pf
+        for ring in range(N_rings):
+            for sub in range(2):
+                i = idx(pf, ring, sub)
+                if pf < N_pf - 1:
+                    j = idx(pf_next, ring, sub)
+                    H[i, j] = H[j, i] = t_perp
+                else:
+                    # Seam: offset by one sublattice site
+                    next_sub = (sub + 1) % 2
+                    next_ring = ring + (1 if next_sub == 0 else 0)
+                    if next_ring < N_rings:
+                        j = idx(0, next_ring, next_sub)
+                        H[i, j] = H[j, i] = t_perp
+    return H
+
+t1, t2 = 5.0, 15.0
+t_par = 10.0
+N_rings = 50
+N_pf = 13
+
+print(f"Cylindrical model: {N_pf} protofilaments x {N_rings} rings")
+print(f"t1 = {t1}, t2 = {t2} meV")
+print("-" * 60)
+print(f"{'t_perp/t_par':>12} {'t_perp':>8} {'Gap (meV)':>10} {'E_midgap':>10} {'IPR':>8}")
+print("-" * 60)
+
+for ratio in [0.00, 0.05, 0.10, 0.15, 0.20]:
+    t_perp = t_par * ratio
+    H = build_cylindrical_hamiltonian(N_rings, N_pf, t1, t2, t_perp)
+    vals = eigh(H, eigvals_only=True)
+
+    sorted_vals = np.sort(vals)
+    pos = sorted_vals[sorted_vals > 0.01]
+    neg = sorted_vals[sorted_vals < -0.01]
+    gap = pos[0] - neg[-1] if len(pos) > 0 and len(neg) > 0 else 0
+
+    midgap_idx = np.argmin(np.abs(vals))
+    E_mid = vals[midgap_idx]
+
+    if not np.isclose(ratio, 0):
+        _, vecs = eigh(H)
+        psi = np.abs(vecs[:, midgap_idx])**2
+        ipr = np.sum(psi**2)
+    else:
+        ipr = 0.0
+
+    print(f"{ratio:>12.2f} {t_perp:>8.1f} {gap:>10.2f} {E_mid:>10.4f} {ipr:>8.5f}")

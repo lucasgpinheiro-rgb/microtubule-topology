@@ -1,0 +1,25 @@
+"""
+Winding number calculation for the SSH model.
+Output: prints winding number for different t2/t1 ratios.
+"""
+import numpy as np
+
+def winding_number(t1, t2, nk=1000):
+    k = np.linspace(-np.pi, np.pi, nk, endpoint=False)
+    dx = t1 + t2 * np.cos(k)
+    dy = t2 * np.sin(k)
+    phase = np.arctan2(dy, dx)
+    dphase = np.diff(phase)
+    # Handle branch cuts
+    dphase = (dphase + np.pi) % (2 * np.pi) - np.pi
+    nu = np.sum(dphase) / (2 * np.pi)
+    return nu
+
+print("Winding number for different t2/t1 ratios:")
+print("-" * 40)
+for ratio in [0.5, 0.8, 1.0, 1.2, 2.0, 3.0]:
+    t1_val = 10.0
+    t2_val = t1_val * ratio
+    nu = winding_number(t1_val, t2_val)
+    phase = "topological" if abs(nu) > 0.5 else "trivial"
+    print(f"  t2/t1 = {ratio:.1f}  ->  nu = {nu:+.3f}  ({phase})")
